@@ -4,7 +4,10 @@
   "description": "GraphQL Apollo Federation Example with two microservices and an API gateway",
   "main": "index.js",
   "scripts": {
-    "install-all": "npm --prefix ./gateway i ./gateway && npm --prefix ./user-service i ./user-service && npm --prefix ./review-service i ./review-service"
+    "install-all": "npm install && npm --prefix ./gateway i ./gateway && npm --prefix ./user-service i ./user-service && npm --prefix ./review-service i ./review-service",
+    "start-review-service": "node review-service/index.js",
+    "start-user-service": "node user-service/index.js",
+    "start-gateway": "node gateway/index.js"
   },
   "keywords": [
     "GraphQL",
