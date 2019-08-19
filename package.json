@@ -1,0 +1,21 @@
+{
+  "name": "apollo-federation-example",
+  "version": "1.0.0",
+  "description": "GraphQL Apollo Federation Example with two microservices and an API gateway",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "npm --prefix ./gateway i ./gateway && npm --prefix ./user-service i ./user-service && npm --prefix ./review-service i ./review-service"
+  },
+  "keywords": [
+    "GraphQL",
+    "Apollo",
+    "Federation",
+    "NodeJS",
+    "Express"
+  ],
+  "author": "David Novicki <supercycle91@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}
