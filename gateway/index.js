@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { ApolloServer } = require("apollo-server");
 const { ApolloGateway, RemoteGraphQLDataSource } = require("@apollo/gateway");
 
@@ -22,6 +23,10 @@ const gateway = new ApolloGateway({
 });
 
 const server = new ApolloServer({
+  tracing: true,
+  engine: {
+    apiKey: process.env.ENGINE_API_KEY
+  },
   gateway,
   // Currently, subscriptions are enabled by default with Apollo Server, however,
   // subscriptions are not compatible with the gateway.  We hope to resolve this
