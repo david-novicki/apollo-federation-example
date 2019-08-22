@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer, gql } = require("apollo-server-lambda");
 const { buildFederatedSchema } = require("@apollo/federation");
 
 const users = [
@@ -44,6 +44,7 @@ const resolvers = {
 const server = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }]),
   context: ({ req }) => {
+    if (!req) return {};
     // get the user token from the headers
     const userId = req.headers["user-id"] || "";
     // try to retrieve a user with the token
@@ -53,6 +54,4 @@ const server = new ApolloServer({
   }
 });
 
-server.listen(4001).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+exports.handler = server.createHandler();

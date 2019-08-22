@@ -1,39 +1,41 @@
-require("dotenv").config();
-const { ApolloServer } = require("apollo-server");
+const { ApolloServer } = require("apollo-server-lambda");
 const { ApolloGateway, RemoteGraphQLDataSource } = require("@apollo/gateway");
 
 const getUserId = token => token;
 
-const gateway = new ApolloGateway({
+const options = {
+  debug: true,
   serviceList: [
-    { name: "users", url: "http://localhost:4001" },
-    { name: "reviews", url: "http://localhost:4002" }
+    {
+      name: "users",
+      url: process.env.USER_SERVICE_URL || "http://localhost:4001/graphql"
+    },
+    {
+      name: "reviews",
+      url: process.env.REVIEW_SERVICE_URL || "http://localhost:4002/graphql"
+    }
     // more services
   ],
-  buildService({ name, url }) {
+  buildService({ _, url }) {
     return new RemoteGraphQLDataSource({
       url,
       willSendRequest({ request, context }) {
         // pass the user's id from the context to underlying services
         // as a header called `user-id`
-        request.http.headers.set("user-id", context.userId);
+        if (context && context.userId)
+          request.http.headers.set("user-id", context.userId);
       }
     });
   }
-});
+};
+const gateway = new ApolloGateway(options);
 
-const server = new ApolloServer({
+let serverOptions = {
   tracing: true,
-  engine: {
-    apiKey: process.env.ENGINE_API_KEY
-  },
   gateway,
-  // Currently, subscriptions are enabled by default with Apollo Server, however,
-  // subscriptions are not compatible with the gateway.  We hope to resolve this
-  // limitation in future versions of Apollo Server.  Please reach out to us on
-  // https://spectrum.chat/apollo/apollo-server if this is critical to your adoption!
   subscriptions: false,
   context: ({ req }) => {
+    if (!req) return {};
     // get the user token from the headers
     const token = req.headers.authorization || "";
     // try to retrieve a user with the token
@@ -41,8 +43,11 @@ const server = new ApolloServer({
     // add the user to the context
     return { userId };
   }
-});
+};
+if (process.env.ENGINE_API_KEY)
+  serverOptions.engine = {
+    apiKey: process.env.ENGINE_API_KEY
+  };
+const server = new ApolloServer(serverOptions);
 
-server.listen().then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+exports.handler = server.createHandler();

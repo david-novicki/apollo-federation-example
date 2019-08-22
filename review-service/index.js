@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer, gql } = require("apollo-server-lambda");
 const { buildFederatedSchema } = require("@apollo/federation");
 
 const reviews = [
@@ -10,6 +10,7 @@ const reviews = [
     comment: "What was this guy thinking doing this?!"
   }
 ];
+const tests = [{ id: "1", word: "hi" }];
 
 const typeDefs = gql`
   extend type Query {
@@ -33,6 +34,9 @@ const resolvers = {
   Query: {
     reviews() {
       return reviews;
+    },
+    tests() {
+      return tests;
     }
   },
   Review: {
@@ -56,6 +60,4 @@ const server = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }])
 });
 
-server.listen(4002).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+exports.handler = server.createHandler();

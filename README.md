@@ -1,7 +1,6 @@
 # apollo-federation-example
 GraphQL Apollo Federation Example with multiple microservices and an API gateway
 
-
 ## Installation
 Clone down the repository into your workspace
 ```
@@ -13,7 +12,7 @@ cd apollo-federation-example
 ```
 Install dependencies
 ```
-npm run install-all
+npm i -g serverless && npm run install-all
 ```
 
 ## Start services
@@ -33,6 +32,7 @@ npm run start-gateway
 ```
 
 ## Explore and test GraphQL services
-Open http://localhost:4000/ in [GraphQL Playground](https://github.com/prisma/graphql-playground) to observe and schema and run queries.
+Open http://localhost:4000/graphql in [GraphQL Playground](https://github.com/prisma/graphql-playground) to observe and schema and run queries.
+
 
 
