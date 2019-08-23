@@ -26,7 +26,7 @@ const encryptionMiddleware = requestContext => {
     requestContext.request.query = encrypt(requestContext.request.query);
   if (
     requestContext.request.variables &&
-    Object.values(requestContext.request.variables) > 0
+    Object.keys(requestContext.request.variables) > 0
   )
     requestContext.request.variables = encrypt(
       requestContext.request.variables
