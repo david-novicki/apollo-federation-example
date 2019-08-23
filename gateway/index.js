@@ -1,9 +1,14 @@
 const { ApolloServer } = require("apollo-server-lambda");
 const { ApolloGateway, RemoteGraphQLDataSource } = require("@apollo/gateway");
+const { getUserId } = require("../utils/user");
+const {
+  enableMiddleware,
+  assignUserIdMiddleware,
+  encryptionMiddleware,
+  decryptionMiddleware
+} = require("../utils/middleware");
 
-const getUserId = token => token;
-
-const options = {
+const gateway = new ApolloGateway({
   debug: true,
   serviceList: [
     {
@@ -14,21 +19,17 @@ const options = {
       name: "reviews",
       url: process.env.REVIEW_SERVICE_URL || "http://localhost:4002/graphql"
     }
-    // more services
   ],
-  buildService({ _, url }) {
+  buildService({ url }) {
     return new RemoteGraphQLDataSource({
       url,
-      willSendRequest({ request, context }) {
-        // pass the user's id from the context to underlying services
-        // as a header called `user-id`
-        if (context && context.userId)
-          request.http.headers.set("user-id", context.userId);
-      }
+      willSendRequest: enableMiddleware([
+        assignUserIdMiddleware,
+        encryptionMiddleware
+      ])
     });
   }
-};
-const gateway = new ApolloGateway(options);
+});
 
 let serverOptions = {
   tracing: true,
@@ -44,10 +45,14 @@ let serverOptions = {
     return { userId };
   }
 };
+// optional engine metrics
 if (process.env.ENGINE_API_KEY)
   serverOptions.engine = {
     apiKey: process.env.ENGINE_API_KEY
   };
 const server = new ApolloServer(serverOptions);
 
-exports.handler = server.createHandler();
+exports.handler = enableMiddleware([
+  decryptionMiddleware, // decrypt body before graph parsing
+  server.createHandler() // standard lambda grapqh impl.
+]);
