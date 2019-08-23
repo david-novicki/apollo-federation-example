@@ -9,7 +9,6 @@ const {
 } = require("../utils/middleware");
 
 const gateway = new ApolloGateway({
-  debug: true,
   serviceList: [
     {
       name: "users",
@@ -35,10 +34,10 @@ let serverOptions = {
   tracing: true,
   gateway,
   subscriptions: false,
-  context: ({ req }) => {
-    if (!req) return {};
+  context: ({ event }) => {
+    if (!event || !event.headers) return {};
     // get the user token from the headers
-    const token = req.headers.authorization || "";
+    const token = event.headers.authorization || "";
     // try to retrieve a user with the token
     const userId = getUserId(token);
     // add the user to the context
