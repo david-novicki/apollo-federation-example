@@ -20,7 +20,7 @@ const assignUserIdMiddleware = requestContext => {
   }
 };
 
-const encryptionMiddleware = requestContext => {
+const serviceEncryptionMiddleware = requestContext => {
   if (!requestContext || !requestContext.request) return;
   if (requestContext.request.query)
     requestContext.request.query = encrypt(requestContext.request.query);
@@ -33,20 +33,36 @@ const encryptionMiddleware = requestContext => {
     );
 };
 
-const decryptionMiddleware = event => {
+const encryptionMiddleware = (error, event, ...rest) => {
+  let newBody = {};
+  try {
+    const body = JSON.parse(event.body);
+    const encryptedBody = encrypt(body);
+    newBody = JSON.stringify(encryptedBody) + "\n";
+  } catch (error) {
+    console.log("failed to encrypt", error);
+  }
+  return [error, { ...event, body: newBody }, ...rest];
+};
+
+const decryptionMiddleware = (event, ...rest) => {
+  let newBody = {};
   try {
     if (event && event.body) {
       const parsedBody = JSON.parse(event.body);
       const decryptedBody = decrypt(parsedBody);
-      event.body = JSON.stringify(decryptedBody);
+      newBody = JSON.stringify(decryptedBody);
     }
   } catch (error) {
     console.log("something went wrong during encryption", error);
   }
+  return [{ ...event, body: newBody }, ...rest];
 };
+
 module.exports = {
   enableMiddleware,
   assignUserIdMiddleware,
+  serviceEncryptionMiddleware,
   encryptionMiddleware,
   decryptionMiddleware
 };

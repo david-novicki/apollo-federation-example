@@ -1,5 +1,10 @@
 const { ApolloServer, gql } = require("apollo-server-lambda");
 const { buildFederatedSchema } = require("@apollo/federation");
+const {
+  encryptionMiddleware,
+  decryptionMiddleware
+} = require("../utils/middleware");
+const pipe = require("lodash/flow");
 
 const reviews = [
   { id: "1", authorId: "123", rating: 3, comment: "This POC sucks!" },
@@ -10,7 +15,6 @@ const reviews = [
     comment: "What was this guy thinking doing this?!"
   }
 ];
-const tests = [{ id: "1", word: "hi" }];
 
 const typeDefs = gql`
   extend type Query {
@@ -34,9 +38,6 @@ const resolvers = {
   Query: {
     reviews() {
       return reviews;
-    },
-    tests() {
-      return tests;
     }
   },
   Review: {
@@ -60,4 +61,12 @@ const server = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }])
 });
 
-exports.handler = server.createHandler();
+exports.handler = pipe([
+  decryptionMiddleware,
+  ([event, context, callback]) =>
+    server.createHandler()(
+      event,
+      context,
+      pipe([encryptionMiddleware, newArgs => callback(...newArgs)]) // wrapped call to enable encryption filter
+    )
+]);

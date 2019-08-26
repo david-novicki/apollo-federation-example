@@ -1,9 +1,11 @@
 const { ApolloServer } = require("apollo-server-lambda");
 const { ApolloGateway, RemoteGraphQLDataSource } = require("@apollo/gateway");
-const { getUserId } = require("../utils/user");
+const { contextHandler } = require("../utils/context");
+const pipe = require("lodash/flow");
 const {
   enableMiddleware,
   assignUserIdMiddleware,
+  serviceEncryptionMiddleware,
   encryptionMiddleware,
   decryptionMiddleware
 } = require("../utils/middleware");
@@ -12,11 +14,11 @@ const gateway = new ApolloGateway({
   serviceList: [
     {
       name: "users",
-      url: process.env.USER_SERVICE_URL || "http://localhost:4001/graphql"
+      url: process.env.USER_SERVICE_URL
     },
     {
       name: "reviews",
-      url: process.env.REVIEW_SERVICE_URL || "http://localhost:4002/graphql"
+      url: process.env.REVIEW_SERVICE_URL
     }
   ],
   buildService({ url }) {
@@ -24,7 +26,7 @@ const gateway = new ApolloGateway({
       url,
       willSendRequest: enableMiddleware([
         assignUserIdMiddleware,
-        encryptionMiddleware
+        serviceEncryptionMiddleware
       ])
     });
   }
@@ -34,15 +36,7 @@ let serverOptions = {
   tracing: true,
   gateway,
   subscriptions: false,
-  context: ({ event }) => {
-    if (!event || !event.headers) return {};
-    // get the user token from the headers
-    const token = event.headers.authorization || "";
-    // try to retrieve a user with the token
-    const userId = getUserId(token);
-    // add the user to the context
-    return { userId };
-  }
+  context: contextHandler
 };
 // optional engine metrics
 if (process.env.ENGINE_API_KEY)
@@ -51,7 +45,12 @@ if (process.env.ENGINE_API_KEY)
   };
 const server = new ApolloServer(serverOptions);
 
-exports.handler = enableMiddleware([
-  decryptionMiddleware, // decrypt body before graph parsing
-  server.createHandler() // standard lambda grapqh impl.
+exports.handler = pipe([
+  decryptionMiddleware,
+  ([event, context, callback]) =>
+    server.createHandler()(
+      event,
+      context,
+      pipe([encryptionMiddleware, newArgs => callback(...newArgs)]) // wrapped call to enable encryption filter
+    )
 ]);
