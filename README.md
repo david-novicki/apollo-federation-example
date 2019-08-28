@@ -74,5 +74,5 @@ Deploy Gateway service
 ```bash
 # insert endpoints provided in last two commands
 REVIEW_SERVICE_URL=<insert APIGW endpoint> USER_SERVICE_URL=<insert APIGW endpoint> npm run deploy-gateway
-# this command if succesful will return your final Gateway URL that you can begin sending queries to
+# this command if successful will return your final Gateway URL that you can begin sending queries to
 ```
