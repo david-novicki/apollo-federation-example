@@ -1,5 +1,10 @@
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer, gql } = require("apollo-server-lambda");
 const { buildFederatedSchema } = require("@apollo/federation");
+const pipe = require("lodash/flow");
+const {
+  encryptionMiddleware,
+  decryptionMiddleware
+} = require("../utils/middleware");
 
 const users = [
   { id: "123", username: "@ava" },
@@ -43,9 +48,10 @@ const resolvers = {
 
 const server = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }]),
-  context: ({ req }) => {
+  context: ({ event }) => {
+    if (!event || !event.headers) return {};
     // get the user token from the headers
-    const userId = req.headers["user-id"] || "";
+    const userId = event.headers["user-id"] || "";
     // try to retrieve a user with the token
     const user = getUser(userId);
     // add the user to the context
@@ -53,6 +59,12 @@ const server = new ApolloServer({
   }
 });
 
-server.listen(4001).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+exports.handler = pipe([
+  decryptionMiddleware,
+  ([event, context, callback]) =>
+    server.createHandler()(
+      event,
+      context,
+      pipe([encryptionMiddleware, newArgs => callback(...newArgs)]) // wrapped call to enable encryption filter
+    )
+]);

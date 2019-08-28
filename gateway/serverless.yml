@@ -1,0 +1,22 @@
+service: apollo-lambda-gateway
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: development
+  environment:
+    USER_SERVICE_URL: ${env:USER_SERVICE_URL, 'http://localhost:4001/graphql"'}
+    REVIEW_SERVICE_URL: ${env:REVIEW_SERVICE_URL, 'http://localhost:4002/graphql"'}
+plugins:
+  - serverless-offline
+functions:
+  graphql:
+    handler: index.handler
+    events:
+      - http:
+          path: graphql
+          method: post
+          cors: true
+      - http:
+          path: graphql
+          method: get
+          cors: true

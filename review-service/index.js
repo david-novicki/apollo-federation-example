@@ -1,5 +1,10 @@
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer, gql } = require("apollo-server-lambda");
 const { buildFederatedSchema } = require("@apollo/federation");
+const {
+  encryptionMiddleware,
+  decryptionMiddleware
+} = require("../utils/middleware");
+const pipe = require("lodash/flow");
 
 const reviews = [
   { id: "1", authorId: "123", rating: 3, comment: "This POC sucks!" },
@@ -56,6 +61,12 @@ const server = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }])
 });
 
-server.listen(4002).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+exports.handler = pipe([
+  decryptionMiddleware,
+  ([event, context, callback]) =>
+    server.createHandler()(
+      event,
+      context,
+      pipe([encryptionMiddleware, newArgs => callback(...newArgs)]) // wrapped call to enable encryption filter
+    )
+]);

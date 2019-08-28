@@ -1,27 +1,29 @@
 {
   "name": "apollo-federation-example",
   "version": "1.0.0",
-  "description": "GraphQL Apollo Federation Example with two microservices and an API gateway",
-  "main": "index.js",
+  "description": "GraphQL Apollo Federation Example using multiple federated microservices with corresponding API Gateways. This repo assumes you have basic knowledge of GraphQL.",
   "scripts": {
     "install-all": "npm install && npm --prefix ./gateway i ./gateway && npm --prefix ./user-service i ./user-service && npm --prefix ./review-service i ./review-service",
-    "start-review-service": "node review-service/index.js",
-    "start-user-service": "node user-service/index.js",
-    "start-gateway": "node gateway/index.js"
+    "start-review-service": "cd review-service && sls offline --port 4002",
+    "start-user-service": "cd user-service && sls offline --port 4001",
+    "start-gateway": "cd gateway && USER_SERVICE_URL=http://localhost:4001/graphql REVIEW_SERVICE_URL=http://localhost:4002/graphql sls offline --port 4000",
+    "deploy-review-service": "cd review-service && sls deploy",
+    "deploy-user-service": "cd user-service && sls deploy",
+    "deploy-gateway": "cd gateway && sls deploy"
   },
   "keywords": [
     "GraphQL",
     "Apollo",
     "Federation",
     "NodeJS",
-    "Express"
+    "Express",
+    "AWS Lambda",
+    "Serverless"
   ],
   "author": "David Novicki <supercycle91@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^1.19.1"
+    "serverless-offline": "^5.10.1"
   },
-  "dependencies": {
-    "dotenv": "^8.1.0"
-  }
+  "dependencies": {}
 }
